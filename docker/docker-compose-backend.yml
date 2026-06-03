@@ -1,0 +1,43 @@
+version: '3.8'
+
+services:
+  halluprobe-api:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - CUDA_VISIBLE_DEVICES=0
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - ./backend/data:/app/data
+      - ./backend/checkpoints:/app/checkpoints
+      - ./backend/outputs:/app/outputs
+      - ./backend/logs:/app/logs
+    command: python run_server.py
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  halluprobe-demo:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    ports:
+      - "7860:7860"
+    environment:
+      - CUDA_VISIBLE_DEVICES=1
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - ./backend/data:/app/data
+      - ./backend/checkpoints:/app/checkpoints
+      - ./backend/outputs:/app/outputs
+      - ./backend/logs:/app/logs
+    command: python run_demo.py
+    depends_on:
+      - halluprobe-api
+    restart: unless-stopped

@@ -1,0 +1,10 @@
+"""Root project .gitignore additions for frontend."""
+
+# Frontend
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+frontend/.env.local
+frontend/.env.*.local
+frontend/build/
+frontend/dist/

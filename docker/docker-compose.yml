@@ -1,0 +1,37 @@
+"""Docker compose configuration."""
+version: '3.8'
+
+services:
+  halluprobe-api:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - CUDA_VISIBLE_DEVICES=0
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - ../outputs:/app/outputs
+      - ../checkpoints:/app/checkpoints
+      - ../logs:/app/logs
+      - ../data:/app/data
+    command: python run_server.py
+    restart: unless-stopped
+
+  halluprobe-demo:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    ports:
+      - "7860:7860"
+    environment:
+      - CUDA_VISIBLE_DEVICES=1
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - ../outputs:/app/outputs
+      - ../checkpoints:/app/checkpoints
+      - ../logs:/app/logs
+      - ../data:/app/data
+    command: python run_demo.py
+    restart: unless-stopped

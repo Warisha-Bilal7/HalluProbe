@@ -1,0 +1,49 @@
+"""Git ignore file."""
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+venv/
+ENV/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Python
+*.egg-info/
+dist/
+build/
+
+# Data and outputs
+data/
+outputs/
+checkpoints/
+logs/
+*.csv
+*.json
+
+# Experiments
+wandb/
+mlruns/
+
+# OS
+.DS_Store
+.gitattributes
+
+# Notebooks
+.ipynb_checkpoints/
+
+# Models
+*.pt
+*.pth
+*.bin
+
+# Temp
+*.tmp
+.env

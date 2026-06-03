@@ -1,0 +1,48 @@
+# HalluProbe Configuration
+
+# Model Configuration
+model:
+  base_model: "mistralai/Mistral-7B" # or "gpt2-medium"
+  use_quantization: true
+  quantization_bits: 4
+  hidden_layers: [8, 16, 24, 32]
+  hidden_dim: 4096
+
+# Training Configuration
+training:
+  batch_size: 32
+  eval_batch_size: 64
+  num_epochs: 5
+  learning_rate: 1e-4
+  weight_decay: 0.01
+  warmup_steps: 500
+  gradient_accumulation_steps: 2
+  max_grad_norm: 1.0
+
+# Loss weights
+loss:
+  lambda_domain: 0.1 # Domain adversarial weight
+  gamma_contrastive: 0.05 # Contrastive loss weight
+  temperature: 0.07 # Contrastive temperature
+
+# Probe Architecture
+probe:
+  encoder_hidden_dims: [512, 256]
+  dropout_rate: 0.1
+  num_domains: 4
+  hallucination_head_dims: [128, 64]
+  domain_head_dims: [128, 64]
+
+# Compute
+device: "cuda"
+mixed_precision: "fp16"
+num_workers: 4
+pin_memory: true
+data_dir: "./data"
+output_dir: "./outputs"
+checkpoint_dir: "./checkpoints"
+log_dir: "./logs"
+use_wandb: true
+use_mlflow: true
+project_name: "halluprobe"
+run_name: "domain-invariant-probe-v1"
