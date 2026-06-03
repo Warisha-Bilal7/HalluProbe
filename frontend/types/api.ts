@@ -1,16 +1,3 @@
-export interface DetectionResult {
-  hallucination_score: number;
-  is_hallucination: boolean;
-  confidence: number;
-  features?: number[];
-  domain_logits?: number[];
-}
-
-export interface BatchDetectionResult {
-  results: DetectionResult[];
-  processing_time_ms: number;
-}
-
 export interface DetectionRequest {
   prompt: string;
   answer: string;
@@ -22,6 +9,25 @@ export interface BatchDetectionRequest {
   prompts: string[];
   answers: string[];
   threshold?: number;
+}
+
+export interface DetectionResult {
+  hallucination_score: number;
+  is_hallucination: boolean;
+  confidence: number;
+  features?: number[] | null;
+  domain_logits?: number[] | null;
+}
+
+export interface BatchDetectionResult {
+  results: DetectionResult[];
+  processing_time_ms: number;
+}
+
+export interface HealthResponse {
+  status: string;
+  model_loaded: boolean;
+  version: string;
 }
 
 export interface ModelInfo {
@@ -37,12 +43,6 @@ export interface ConfigResponse {
   timestamp: string;
 }
 
-export interface HealthResponse {
-  status: string;
-  model_loaded: boolean;
-  version: string;
-}
-
 export interface DetectionFormData {
   prompt: string;
   answer: string;
@@ -55,12 +55,4 @@ export interface BatchItem {
   prompt: string;
   answer: string;
   result?: DetectionResult;
-  error?: string;
-  isProcessing?: boolean;
-}
-
-export interface VisualizationData {
-  domain: string;
-  score: number;
-  confidence: number;
 }

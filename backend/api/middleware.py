@@ -1,4 +1,5 @@
 """FastAPI middleware for logging and error handling."""
+from starlette.middleware.base import BaseHTTPMiddleware
 from fastapi import Request
 from fastapi.responses import JSONResponse
 from datetime import datetime
@@ -8,13 +9,10 @@ import time
 logger = logging.getLogger(__name__)
 
 
-class LoggingMiddleware:
+class LoggingMiddleware(BaseHTTPMiddleware):
     """Middleware for request/response logging."""
 
-    def __init__(self, app):
-        self.app = app
-
-    async def __call__(self, request: Request, call_next):
+    async def dispatch(self, request: Request, call_next):
         request_time = time.time()
         
         # Log request
@@ -44,13 +42,10 @@ class LoggingMiddleware:
         return response
 
 
-class ErrorHandlingMiddleware:
+class ErrorHandlingMiddleware(BaseHTTPMiddleware):
     """Middleware for error handling."""
 
-    def __init__(self, app):
-        self.app = app
-
-    async def __call__(self, request: Request, call_next):
+    async def dispatch(self, request: Request, call_next):
         try:
             response = await call_next(request)
             return response

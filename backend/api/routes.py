@@ -99,10 +99,22 @@ async def detect_hallucination(request: DetectionRequest):
         }
         
         if request.return_features and "features" in result:
-            response_data["features"] = result["features"].cpu().tolist() if hasattr(result["features"], "cpu") else result["features"].tolist()
+            features = result["features"]
+            if hasattr(features, "cpu"):
+                features = features.cpu()
+            if hasattr(features, "tolist"):
+                response_data["features"] = features.tolist()
+            else:
+                response_data["features"] = features
         
         if request.return_features and "domain_logits" in result:
-            response_data["domain_logits"] = result["domain_logits"].cpu().tolist() if hasattr(result["domain_logits"], "cpu") else result["domain_logits"].tolist()
+            logits = result["domain_logits"]
+            if hasattr(logits, "cpu"):
+                logits = logits.cpu()
+            if hasattr(logits, "tolist"):
+                response_data["domain_logits"] = logits.tolist()
+            else:
+                response_data["domain_logits"] = logits
         
         return DetectionResult(**response_data)
         
