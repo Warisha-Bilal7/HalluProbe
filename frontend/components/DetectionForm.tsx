@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { DetectionFormData, DetectionResult } from "@/types/api";
-import { Button, TextArea, Input, Alert, Loader } from "@/components/ui";
+import { Button, TextArea, Alert } from "@/components/ui";
 import { useDetection } from "@/hooks/useApi";
 import ScoreDisplay from "./ScoreDisplay";
 
@@ -15,7 +15,7 @@ export default function DetectionForm({ onResult }: DetectionFormProps) {
     prompt: "",
     answer: "",
     threshold: 0.5,
-    includeFeatures: false,
+    includeFeatures: true,
   });
 
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
@@ -25,10 +25,10 @@ export default function DetectionForm({ onResult }: DetectionFormProps) {
     const errors: Record<string, string> = {};
 
     if (!formData.prompt.trim()) {
-      errors.prompt = "Prompt is required";
+      errors.prompt = "Input prompt is required";
     }
     if (!formData.answer.trim()) {
-      errors.answer = "Answer is required";
+      errors.answer = "Model response is required";
     }
     if (formData.prompt.trim().length < 5) {
       errors.prompt = "Prompt must be at least 5 characters";
@@ -56,16 +56,16 @@ export default function DetectionForm({ onResult }: DetectionFormProps) {
 
       onResult?.(detectionResult);
     } catch (err) {
-      // Error is already set in the hook
+      // Error handled in hook
     }
   };
 
   return (
-    <div className="w-full">
-      <form onSubmit={handleSubmit} className="space-y-4">
+    <div className="w-full space-y-6">
+      <form onSubmit={handleSubmit} className="space-y-5">
         <TextArea
-          label="Prompt"
-          placeholder="Enter the input prompt..."
+          label="1. Input Prompt"
+          placeholder="Type or paste the prompt sent to the LLM (e.g., 'What is the molecular structure of aspirin?')..."
           value={formData.prompt}
           onChange={(e) => {
             setFormData((prev) => ({ ...prev, prompt: e.target.value }));
@@ -77,12 +77,13 @@ export default function DetectionForm({ onResult }: DetectionFormProps) {
             }
           }}
           error={validationErrors.prompt}
-          rows={4}
+          rows={3}
+          className="font-mono text-sm bg-[#080d19] border-white/5 focus:border-violet-500"
         />
 
         <TextArea
-          label="Answer"
-          placeholder="Enter the model's answer..."
+          label="2. Model Answer"
+          placeholder="Paste the generated response to check for potential hallucinations or inconsistencies..."
           value={formData.answer}
           onChange={(e) => {
             setFormData((prev) => ({ ...prev, answer: e.target.value }));
@@ -95,13 +96,17 @@ export default function DetectionForm({ onResult }: DetectionFormProps) {
           }}
           error={validationErrors.answer}
           rows={4}
+          className="font-mono text-sm bg-[#080d19] border-white/5 focus:border-violet-500"
         />
 
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Threshold: {formData.threshold.toFixed(2)}
-            </label>
+        <div className="p-4 bg-white/[0.01] border border-white/[0.04] rounded-lg grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-2">
+            <div className="flex justify-between items-center text-xs font-semibold uppercase tracking-wider text-gray-400">
+              <span>Risk Threshold</span>
+              <span className="font-mono text-violet-400 font-bold bg-violet-500/10 px-2 py-0.5 rounded border border-violet-500/20">
+                {formData.threshold.toFixed(2)}
+              </span>
+            </div>
             <input
               type="range"
               min="0"
@@ -114,15 +119,15 @@ export default function DetectionForm({ onResult }: DetectionFormProps) {
                   threshold: parseFloat(e.target.value),
                 }))
               }
-              className="w-full"
+              className="w-full cursor-pointer accent-violet-500"
             />
-            <p className="text-xs text-gray-500 mt-1">
-              Lower = detect more hallucinations
+            <p className="text-[10px] text-gray-500 leading-snug">
+              Adjust cutoff value. Lower thresholds identify more potential hallucinations.
             </p>
           </div>
 
-          <div className="flex items-end">
-            <label className="flex items-center space-x-2 cursor-pointer">
+          <div className="flex items-center md:justify-end">
+            <label className="flex items-center gap-3 cursor-pointer group select-none">
               <input
                 type="checkbox"
                 checked={formData.includeFeatures}
@@ -132,9 +137,16 @@ export default function DetectionForm({ onResult }: DetectionFormProps) {
                     includeFeatures: e.target.checked,
                   }))
                 }
-                className="w-4 h-4"
+                className="w-4 h-4 rounded border-white/[0.1] bg-[#080d19] text-violet-600 focus:ring-violet-500 focus:ring-offset-[#070a13] cursor-pointer"
               />
-              <span className="text-sm text-gray-700">Include Features</span>
+              <div className="space-y-0.5">
+                <span className="text-xs font-semibold uppercase tracking-wider text-gray-300 group-hover:text-white transition-colors">
+                  Retrieve Hidden State Logs
+                </span>
+                <p className="text-[10px] text-gray-500 font-normal">
+                  Includes dimensions & domain classification logits.
+                </p>
+              </div>
             </label>
           </div>
         </div>
@@ -143,14 +155,14 @@ export default function DetectionForm({ onResult }: DetectionFormProps) {
           type="submit"
           disabled={isLoading}
           isLoading={isLoading}
-          className="w-full"
+          className="w-full py-3"
         >
-          {isLoading ? "Detecting..." : "Detect Hallucination"}
+          {isLoading ? "Running Probes..." : "🔍 Analyze Response"}
         </Button>
       </form>
 
       {error && (
-        <Alert variant="error" message={error} className="mt-4" />
+        <Alert variant="error" message={error} />
       )}
 
       {result && <ScoreDisplay result={result} />}

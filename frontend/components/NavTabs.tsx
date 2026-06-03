@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 
 interface Tab {
   id: string;
@@ -16,21 +16,24 @@ interface NavTabsProps {
 
 export default function NavTabs({ tabs, activeTab, onChange }: NavTabsProps) {
   return (
-    <div className="flex space-x-2 border-b border-gray-200 overflow-x-auto">
-      {tabs.map((tab) => (
-        <button
-          key={tab.id}
-          onClick={() => onChange(tab.id)}
-          className={`px-4 py-3 font-medium text-sm whitespace-nowrap border-b-2 transition-colors ${
-            activeTab === tab.id
-              ? "border-blue-600 text-blue-600"
-              : "border-transparent text-gray-600 hover:text-gray-900"
-          }`}
-        >
-          <span className="mr-2">{tab.icon}</span>
-          {tab.label}
-        </button>
-      ))}
+    <div className="flex space-x-1 border-b border-white/[0.04] overflow-x-auto scrollbar-none p-1 bg-white/[0.01] rounded-t-xl">
+      {tabs.map((tab) => {
+        const isActive = activeTab === tab.id;
+        return (
+          <button
+            key={tab.id}
+            onClick={() => onChange(tab.id)}
+            className={`px-5 py-3 font-bold text-xs uppercase tracking-wider whitespace-nowrap border-b-2 transition-all duration-200 rounded-t-lg flex items-center gap-2 select-none ${
+              isActive
+                ? "border-violet-500 text-violet-400 bg-violet-500/[0.04]"
+                : "border-transparent text-gray-400 hover:text-gray-200 hover:bg-white/[0.02]"
+            }`}
+          >
+            <span>{tab.icon}</span>
+            {tab.label}
+          </button>
+        );
+      })}
     </div>
   );
 }

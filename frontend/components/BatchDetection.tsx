@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useState } from "react";
-import { BatchItem, DetectionResult } from "@/types/api";
-import { Button, Card, Alert, Loader, Badge } from "@/components/ui";
+import { BatchItem } from "@/types/api";
+import { Button, Card, Alert, Badge } from "@/components/ui";
 import { useBatchDetection } from "@/hooks/useApi";
 import { generateId, downloadCsv, formatScore, getScoreLabel } from "@/lib/utils";
 
@@ -10,7 +10,7 @@ export default function BatchDetection() {
   const [batchItems, setBatchItems] = useState<BatchItem[]>([]);
   const [threshold, setThreshold] = useState(0.5);
   const [csvInput, setCsvInput] = useState("");
-  const { results, isLoading, error, detectBatch } = useBatchDetection();
+  const { isLoading, error, detectBatch } = useBatchDetection();
 
   const addItem = () => {
     setBatchItems((prev) => [
@@ -38,7 +38,7 @@ export default function BatchDetection() {
   const handleProcessBatch = async () => {
     const validItems = batchItems.filter((item) => item.prompt && item.answer);
     if (validItems.length === 0) {
-      alert("Please add at least one prompt-answer pair");
+      alert("Please add or import at least one prompt-answer pair");
       return;
     }
 
@@ -50,7 +50,7 @@ export default function BatchDetection() {
       });
 
       setBatchItems((prev) =>
-        prev.map((item, idx) => {
+        prev.map((item) => {
           const validIdx = validItems.findIndex((v) => v.id === item.id);
           if (validIdx >= 0 && processedResults.results[validIdx]) {
             return {
@@ -62,7 +62,7 @@ export default function BatchDetection() {
         })
       );
     } catch (err) {
-      // Error already handled
+      // Error handled in hook
     }
   };
 
@@ -72,6 +72,7 @@ export default function BatchDetection() {
       const newItems: BatchItem[] = [];
 
       for (const line of lines) {
+        if (!line.trim()) continue;
         const [prompt, answer] = line.split("|").map((s) => s.trim());
         if (prompt && answer) {
           newItems.push({
@@ -86,10 +87,10 @@ export default function BatchDetection() {
         setBatchItems((prev) => [...prev, ...newItems]);
         setCsvInput("");
       } else {
-        alert("No valid prompt-answer pairs found. Use format: prompt|answer");
+        alert("No valid prompt-answer pairs found. Ensure format is: prompt|answer");
       }
     } catch (err) {
-      alert("Failed to import CSV. Use format: prompt|answer (one per line)");
+      alert("Failed to import CSV lines. Format: prompt|answer (one per line)");
     }
   };
 
@@ -106,7 +107,7 @@ export default function BatchDetection() {
       }));
 
     if (exportData.length === 0) {
-      alert("No results to export");
+      alert("No evaluated results available to export");
       return;
     }
 
@@ -114,124 +115,140 @@ export default function BatchDetection() {
   };
 
   return (
-    <div className="space-y-4">
-      <Card>
-        <h3 className="text-lg font-semibold mb-4">Batch Detection</h3>
+    <div className="space-y-6">
+      {/* Import CSV Panel */}
+      <Card className="border border-white/5 bg-[#080d19]">
+        <h3 className="text-sm font-bold text-gray-300 uppercase tracking-wider mb-3">Batch Import Console</h3>
 
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Import from CSV (prompt|answer format, one per line)
+            <label className="block text-xs font-semibold text-gray-400 uppercase tracking-widest mb-1.5">
+              Paste Pipe-Delimited Data (prompt|answer format, one per line)
             </label>
             <textarea
               value={csvInput}
               onChange={(e) => setCsvInput(e.target.value)}
-              placeholder={`Example:\nWhat is 2+2?|2+2 equals 5\nWhat is the capital of France?|Paris`}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder={`Example:\nWhat is 2+2?|2+2 equals 5\nWho wrote Romeo and Juliet?|William Shakespeare`}
+              className="w-full px-3.5 py-2.5 bg-[#050810] border border-white/[0.08] rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500/25 text-white placeholder-gray-500 font-mono text-xs leading-relaxed"
               rows={4}
             />
             <Button
               onClick={handleImportCsv}
               variant="secondary"
               size="sm"
-              className="mt-2"
+              className="mt-3.5"
             >
-              Import
+              📥 Parse & Load Lines
             </Button>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Threshold: {threshold.toFixed(2)}
-            </label>
-            <input
-              type="range"
-              min="0"
-              max="1"
-              step="0.05"
-              value={threshold}
-              onChange={(e) => setThreshold(parseFloat(e.target.value))}
-              className="w-full"
-            />
+          <div className="pt-4 border-t border-white/[0.04] grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-1">
+              <div className="flex justify-between items-center text-xs font-semibold uppercase tracking-wider text-gray-400">
+                <span>Evaluation Cutoff</span>
+                <span className="font-mono text-violet-400 font-bold bg-violet-500/10 px-2 py-0.5 rounded border border-violet-500/20">
+                  {threshold.toFixed(2)}
+                </span>
+              </div>
+              <input
+                type="range"
+                min="0"
+                max="1"
+                step="0.05"
+                value={threshold}
+                onChange={(e) => setThreshold(parseFloat(e.target.value))}
+                className="w-full cursor-pointer accent-violet-500 mt-2"
+              />
+            </div>
           </div>
         </div>
       </Card>
 
+      {/* Batch List items */}
       {batchItems.length > 0 && (
-        <Card>
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-lg font-semibold">
-              Items ({batchItems.length})
-            </h3>
-            <div className="space-x-2">
+        <Card className="border border-white/5">
+          <div className="flex justify-between items-center pb-4 border-b border-white/[0.04] mb-4">
+            <div className="space-y-0.5">
+              <h3 className="text-sm font-bold text-gray-300 uppercase tracking-wider">Loaded Queue</h3>
+              <p className="text-[10px] text-gray-500">{batchItems.length} items ready for verification</p>
+            </div>
+            
+            <div className="flex gap-2">
               <Button
                 onClick={addItem}
                 variant="secondary"
                 size="sm"
               >
-                Add Item
+                + Add Row
               </Button>
               <Button
                 onClick={handleProcessBatch}
                 disabled={isLoading}
                 isLoading={isLoading}
+                size="sm"
               >
-                {isLoading ? "Processing..." : "Process Batch"}
+                🚀 Run Queue Probe
               </Button>
             </div>
           </div>
 
-          <div className="space-y-3 max-h-96 overflow-y-auto">
+          {/* List queue items */}
+          <div className="space-y-3 max-h-96 overflow-y-auto pr-1">
             {batchItems.map((item) => (
-              <div key={item.id} className="border border-gray-200 rounded-lg p-3 space-y-2">
-                <div className="flex justify-between items-start">
-                  <div className="flex-1 space-y-2">
+              <div key={item.id} className="border border-white/[0.05] bg-white/[0.01] rounded-lg p-3.5 space-y-3 transition-colors hover:border-white/10 relative overflow-hidden">
+                <div className="flex justify-between items-start gap-4">
+                  <div className="flex-1 space-y-2.5">
                     <input
                       type="text"
-                      placeholder="Prompt"
+                      placeholder="Prompt text..."
                       value={item.prompt}
                       onChange={(e) => updateItem(item.id, e.target.value, item.answer)}
-                      className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
+                      className="w-full px-2.5 py-1.5 bg-[#050810] border border-white/[0.06] rounded-lg text-sm text-gray-200 placeholder-gray-500 font-mono text-xs focus:outline-none focus:border-violet-500"
                     />
                     <input
                       type="text"
-                      placeholder="Answer"
+                      placeholder="Generated response to probe..."
                       value={item.answer}
                       onChange={(e) => updateItem(item.id, item.prompt, e.target.value)}
-                      className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
+                      className="w-full px-2.5 py-1.5 bg-[#050810] border border-white/[0.06] rounded-lg text-sm text-gray-200 placeholder-gray-500 font-mono text-xs focus:outline-none focus:border-violet-500"
                     />
                   </div>
-                  <Button
+                  <button
                     onClick={() => removeItem(item.id)}
-                    variant="danger"
-                    size="sm"
-                    className="ml-2"
+                    className="p-1 px-2 text-xs font-bold text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 rounded-full border border-rose-500/20 active:scale-95 transition-all self-start"
                   >
                     ✕
-                  </Button>
+                  </button>
                 </div>
 
+                {/* Score results card */}
                 {item.result && (
-                  <div className="bg-gray-50 p-2 rounded flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium">
-                        Score: {formatScore(item.result.hallucination_score)}
+                  <div className="bg-[#050810] border border-white/[0.04] p-3 rounded-lg flex items-center justify-between gap-4">
+                    <div className="space-y-0.5">
+                      <p className="text-xs font-semibold text-gray-300">
+                        Prob: <span className="font-mono text-violet-400">{formatScore(item.result.hallucination_score)}</span>
                       </p>
-                      <p className="text-xs text-gray-600">
-                        {getScoreLabel(item.result.hallucination_score)}
+                      <p className="text-[10px] text-gray-400">
+                        Confidence: {formatScore(item.result.confidence * 100, 1)}%
                       </p>
                     </div>
-                    <Badge
-                      variant={item.result.is_hallucination ? "danger" : "success"}
-                    >
-                      {item.result.is_hallucination ? "Hallucination" : "Truthful"}
-                    </Badge>
+                    
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] text-gray-400 hidden sm:inline">{getScoreLabel(item.result.hallucination_score)}</span>
+                      <Badge
+                        variant={item.result.is_hallucination ? "danger" : "success"}
+                        className="text-[10px] scale-90"
+                      >
+                        {item.result.is_hallucination ? "Hallucination" : "Truthful"}
+                      </Badge>
+                    </div>
                   </div>
                 )}
               </div>
             ))}
           </div>
 
+          {/* Export action */}
           {batchItems.some((item) => item.result) && (
             <Button
               onClick={handleExportResults}
@@ -239,7 +256,7 @@ export default function BatchDetection() {
               size="sm"
               className="mt-4 w-full"
             >
-              📥 Export Results as CSV
+              📥 Export Results (CSV)
             </Button>
           )}
         </Card>

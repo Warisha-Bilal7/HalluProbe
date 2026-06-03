@@ -7,72 +7,78 @@ import NavTabs from "@/components/NavTabs";
 import DetectionForm from "@/components/DetectionForm";
 import BatchDetection from "@/components/BatchDetection";
 import InfoPanel from "@/components/InfoPanel";
-import { Card, Alert } from "@/components/ui";
+import { Card } from "@/components/ui";
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState("single");
 
   const tabs = [
-    { id: "single", label: "Single Detection", icon: "🎯" },
-    { id: "batch", label: "Batch Processing", icon: "📦" },
-    { id: "info", label: "Information", icon: "ℹ️" },
+    { id: "single", label: "Single Probe", icon: "🎯" },
+    { id: "batch", label: "Queue Processing", icon: "📦" },
+    { id: "info", label: "Architecture", icon: "ℹ️" },
   ];
 
   return (
-    <main className="min-h-screen bg-gray-50">
-      <div className="container mx-auto px-4 py-8 max-w-7xl">
-        {/* Header */}
+    <main className="min-h-screen bg-[#070a13] cyber-grid pb-16">
+      <div className="container mx-auto px-4 py-8 max-w-5xl space-y-6">
+        {/* Brand Header */}
         <Header />
 
-        {/* Status Panel */}
-        <div className="mt-8">
-          <StatusPanel />
-        </div>
+        {/* Status Dashboard Panel */}
+        <StatusPanel />
 
-        {/* Main Content */}
-        <div className="mt-8">
-          <Card>
-            {/* Navigation Tabs */}
-            <NavTabs tabs={tabs} activeTab={activeTab} onChange={setActiveTab} />
+        {/* Main interactive area */}
+        <Card className="p-0 border border-white/5 overflow-hidden bg-white/[0.01] rounded-xl">
+          {/* Navigation Tabs */}
+          <NavTabs tabs={tabs} activeTab={activeTab} onChange={setActiveTab} />
 
-            {/* Tab Content */}
-            <div className="py-6">
-              {activeTab === "single" && (
-                <div className="max-w-2xl">
-                  <p className="text-gray-600 mb-6">
-                    Enter a prompt and the model's answer to detect if it contains hallucinations.
-                    Adjust the threshold to control sensitivity.
+          {/* Tab Content */}
+          <div className="p-6">
+            {activeTab === "single" && (
+              <div className="space-y-4">
+                <div className="space-y-1">
+                  <h2 className="text-base font-bold text-gray-200 uppercase tracking-wider">Single Input Evaluator</h2>
+                  <p className="text-xs text-gray-400">
+                    Input prompt-answer pair to extract pooled layers and calculate domain-invariant hallucination risk.
                   </p>
-                  <DetectionForm />
                 </div>
-              )}
+                <DetectionForm />
+              </div>
+            )}
 
-              {activeTab === "batch" && (
-                <div className="max-w-4xl">
-                  <p className="text-gray-600 mb-6">
-                    Process multiple prompt-answer pairs at once. Import from CSV or add items manually.
-                    Results can be exported for further analysis.
+            {activeTab === "batch" && (
+              <div className="space-y-4">
+                <div className="space-y-1">
+                  <h2 className="text-base font-bold text-gray-200 uppercase tracking-wider">Batch Queue Evaluator</h2>
+                  <p className="text-xs text-gray-400">
+                    Import multiple prompt-answer pairs via pipe-separated lines to process in batches and download results.
                   </p>
-                  <BatchDetection />
                 </div>
-              )}
+                <BatchDetection />
+              </div>
+            )}
 
-              {activeTab === "info" && (
-                <div className="max-w-3xl">
-                  <InfoPanel />
+            {activeTab === "info" && (
+              <div className="space-y-4">
+                <div className="space-y-1">
+                  <h2 className="text-base font-bold text-gray-200 uppercase tracking-wider">System Specifications</h2>
+                  <p className="text-xs text-gray-400">
+                    Technical overview of the adversarial encoders and contrastive hidden state probes.
+                  </p>
                 </div>
-              )}
-            </div>
-          </Card>
-        </div>
+                <InfoPanel />
+              </div>
+            )}
+          </div>
+        </Card>
 
         {/* Footer */}
-        <footer className="mt-12 py-8 border-t border-gray-200 text-center text-gray-600 text-sm">
+        <footer className="py-8 text-center text-[10px] uppercase tracking-widest text-gray-500 font-semibold space-y-1">
           <p>
-            HalluProbe v1.0.0 • Advanced Machine Learning Course • 2026
+            HalluProbe Framework • Version 1.0.0
           </p>
-          <p className="mt-2">
-            Built with domain-adversarial training and contrastive learning
+          <p className="opacity-60 font-mono text-[9px]">
+            Designed with Domain-Adversarial Encoders & Contrastive Loss Alignment
           </p>
         </footer>
       </div>
