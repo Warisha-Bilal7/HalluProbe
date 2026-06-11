@@ -57,11 +57,15 @@ class HiddenStateExtractor:
         else:
             self.model = AutoModelForCausalLM.from_pretrained(
                 model_name,
-                device_map=device,
+                device_map=device if device != "cpu" else None,
                 trust_remote_code=True,
             )
+            if device == "cpu":
+                self.model.to(device)
 
         self.tokenizer = AutoTokenizer.from_pretrained(model_name)
+        if self.tokenizer.pad_token is None:
+            self.tokenizer.pad_token = self.tokenizer.eos_token
         self.model.eval()
 
         # Register hooks for target layers

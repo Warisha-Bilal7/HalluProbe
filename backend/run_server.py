@@ -37,7 +37,7 @@ def main():
     # Initialize pipeline
     try:
         logger.info("Initializing HalluProbe pipeline...")
-        pipeline = HalluProbePipeline(config, device="cuda")
+        pipeline = HalluProbePipeline(config, device="cpu")
         logger.info("Pipeline initialized successfully")
     except Exception as e:
         logger.error(f"Failed to initialize pipeline: {e}")

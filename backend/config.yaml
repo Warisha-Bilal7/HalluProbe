@@ -2,11 +2,11 @@
 
 # Model Configuration
 model:
-  base_model: "mistralai/Mistral-7B" # or "gpt2-medium"
-  use_quantization: true
+  base_model: "gpt2-medium"
+  use_quantization: false
   quantization_bits: 4
-  hidden_layers: [8, 16, 24, 32]
-  hidden_dim: 4096
+  hidden_layers: [4, 8, 12, 16]
+  hidden_dim: 1024
 
 # Training Configuration
 training:
@@ -34,7 +34,7 @@ probe:
   domain_head_dims: [128, 64]
 
 # Compute
-device: "cuda"
+device: "cpu"
 mixed_precision: "fp16"
 num_workers: 4
 pin_memory: true

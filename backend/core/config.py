@@ -7,11 +7,11 @@ from typing import List, Dict, Any, Optional
 @dataclass
 class ModelConfig:
     """Model configuration."""
-    base_model: str = "mistralai/Mistral-7B"
-    use_quantization: bool = True
+    base_model: str = "gpt2-medium"
+    use_quantization: bool = False
     quantization_bits: int = 4
-    hidden_layers: List[int] = field(default_factory=lambda: [8, 16, 24, 32])
-    hidden_dim: int = 4096
+    hidden_layers: List[int] = field(default_factory=lambda: [4, 8, 12, 16])
+    hidden_dim: int = 1024
 
 
 @dataclass

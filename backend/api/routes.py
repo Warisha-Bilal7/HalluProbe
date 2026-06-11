@@ -98,23 +98,21 @@ async def detect_hallucination(request: DetectionRequest):
             "confidence": result["confidence"],
         }
         
+        def _to_flat_list(value):
+            if hasattr(value, "cpu"):
+                value = value.cpu()
+            if hasattr(value, "tolist"):
+                value = value.tolist()
+            # Squeeze a leading batch dimension for single-item detection.
+            if isinstance(value, list) and len(value) == 1 and isinstance(value[0], list):
+                value = value[0]
+            return value
+
         if request.return_features and "features" in result:
-            features = result["features"]
-            if hasattr(features, "cpu"):
-                features = features.cpu()
-            if hasattr(features, "tolist"):
-                response_data["features"] = features.tolist()
-            else:
-                response_data["features"] = features
-        
+            response_data["features"] = _to_flat_list(result["features"])
+
         if request.return_features and "domain_logits" in result:
-            logits = result["domain_logits"]
-            if hasattr(logits, "cpu"):
-                logits = logits.cpu()
-            if hasattr(logits, "tolist"):
-                response_data["domain_logits"] = logits.tolist()
-            else:
-                response_data["domain_logits"] = logits
+            response_data["domain_logits"] = _to_flat_list(result["domain_logits"])
         
         return DetectionResult(**response_data)
         
