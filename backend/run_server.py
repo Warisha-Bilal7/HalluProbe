@@ -38,6 +38,17 @@ def main():
     try:
         logger.info("Initializing HalluProbe pipeline...")
         pipeline = HalluProbePipeline(config, device="cpu")
+        # Load trained probe weights if a checkpoint exists, otherwise the probe
+        # stays at random init (scores hover around 0.5).
+        checkpoint_path = Path("checkpoints/probe.pt")
+        if checkpoint_path.exists():
+            pipeline.load_probe(str(checkpoint_path))
+            logger.info(f"Loaded trained probe from {checkpoint_path}")
+        else:
+            logger.warning(
+                "No trained checkpoint at checkpoints/probe.pt - probe is untrained "
+                "(run `python train.py` to train it)"
+            )
         logger.info("Pipeline initialized successfully")
     except Exception as e:
         logger.error(f"Failed to initialize pipeline: {e}")
