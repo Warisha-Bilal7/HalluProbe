@@ -48,8 +48,10 @@
     - [Backend Configuration (`config.yaml`)](#backend-configuration-(config.yaml))
     - [Frontend Configuration (`frontend/.env.local`)](#frontend-configuration-(frontend.env.local))
   - [📊 Performance & Baselines](#-performance--baselines)
-    - [Cross-Domain F1-Score & AUC-ROC Comparisons](#cross-domain-f1-score--auc-roc-comparisons)
+    - [Reproduced Results (this repository)](#reproduced-results-this-repository)
+    - [Target Benchmark (literature reference)](#target-benchmark-literature-reference)
     - [Supported Evaluation Datasets](#supported-evaluation-datasets)
+  - [🎓 How the Model Is Trained](#-how-the-model-is-trained)
   - [🧪 Quality Assurance & Testing](#-quality-assurance--testing)
   - [🤝 Contributing](#-contributing)
   - [📜 Citation](#-citation)
@@ -303,9 +305,37 @@ For a full parameter breakdown, read the root [CONFIG.md](./CONFIG.md).
 
 ## 📊 Performance & Baselines
 
-Our adversarial hidden-state extraction method shows remarkable resilience to domain shift. HalluProbe matches or outperforms state-of-the-art architectures in OOD environments.
+### Reproduced Results (this repository)
 
-### Cross-Domain F1-Score & AUC-ROC Comparisons
+The shipped checkpoint (`backend/checkpoints/probe.pt`) was trained and evaluated
+end-to-end on a CPU using a **frozen GPT-2-medium** backbone and **TruthfulQA**.
+Ground-truth labels come directly from TruthfulQA's human-verified answers
+(`correct_answers` → truthful = 0, `incorrect_answers` → hallucinated = 1). To
+measure domain generalization, **8 of the 38 question categories are held out
+entirely** as an out-of-distribution (OOD) test set — the probe never sees them
+during training.
+
+| Split | Samples | F1 | Accuracy | AUC-ROC | Precision | Recall |
+| :--- | :---: | :---: | :---: | :---: | :---: | :---: |
+| Train | 927 | 0.86 | 0.87 | 0.96 | 0.90 | 0.83 |
+| In-domain validation | 231 | 0.61 | 0.62 | 0.71 | 0.63 | 0.59 |
+| **OOD test (held-out categories)** | 476 | **0.74** | **0.72** | **0.79** | 0.69 | 0.81 |
+
+> Setup: gpt2-medium (frozen), probe trained 30 epochs, dropout 0.4, weight
+> decay 0.05, on CPU. Full metrics are written to `backend/outputs/metrics.json`.
+> Chance performance is AUC-ROC 0.50; the probe scores **0.79 on categories it
+> never trained on**, demonstrating cross-domain generalization. The probe is
+> currently biased toward recall (it over-flags), so precision on general trivia
+> outside the TruthfulQA misconception distribution is a known limitation and
+> direction for future work (more multi-domain training data).
+
+### Target Benchmark (literature reference)
+
+The figures below are the **target** results from the project proposal and the
+referenced literature (SAPLMA, MIND). They define the goal the architecture is
+designed to reach at full scale (e.g. with a larger backbone such as Mistral-7B
+and multi-domain training corpora) — they are **not** the reproduced numbers
+above.
 
 | Probing Method | In-Domain F1 (%) | Medical OOD F1 (%) | Legal OOD F1 (%) | WikiBio OOD F1 (%) | Avg OOD F1 (%) |
 | :--- | :---: | :---: | :---: | :---: | :---: |
@@ -313,14 +343,48 @@ Our adversarial hidden-state extraction method shows remarkable resilience to do
 | **Output Token Classifier** | 61.2 | 54.3 | 52.1 | 55.4 | 53.9 |
 | **SAPLMA** (Azaria et al.) | 74.8 | 49.6 | 47.2 | 52.9 | 49.9 |
 | **MIND** (Su et al.) | 72.1 | 51.3 | 50.8 | 54.0 | 52.0 |
-| **HalluProbe (Ours)** | **79.4** | **72.1** | **70.8** | **71.6** | **71.5** |
+| **HalluProbe (target)** | **79.4** | **72.1** | **70.8** | **71.6** | **71.5** |
 
 ### Supported Evaluation Datasets
-* **TruthfulQA** (General QA): General training framework evaluation.
+* **TruthfulQA** (General QA): Used for the reproduced training/evaluation above.
 * **HaluEval** (Multi-domain QA): Massive corpus of hallucinations for model tuning.
 * **MedHalt** (Medical QA): Out-of-Distribution validation set representing medicine.
 * **LegalBench** (Legal Contexts): Out-of-Distribution validation set representing statutory code.
 * **WikiBio** (Biographies): Out-of-Distribution validation set for human biographies.
+
+---
+
+## 🎓 How the Model Is Trained
+
+Only the lightweight probe is trained — the LLM backbone stays **frozen**, so the
+whole pipeline runs on a CPU. Training is handled by [`backend/train.py`](backend/train.py):
+
+```bash
+cd backend
+python train.py                       # uses cached features if present
+# or customize:
+python train.py --epochs 30 --learning-rate 5e-4 --dropout 0.4 --weight-decay 0.05
+```
+
+The script performs the following steps:
+
+1. **Load data** — TruthfulQA (`truthfulqa/truthful_qa`, generation split); correct
+   answers are labeled truthful (0), incorrect answers hallucinated (1).
+2. **Assign domains + OOD split** — the 38 categories are grouped into 4 coarse
+   domains for the adversarial head, and 8 categories are held out as the OOD test set.
+3. **Extract features (cached)** — each prompt+answer pair is passed through the
+   frozen LLM; hidden states from layers `[4, 8, 12, 16]` are mean-pooled into a
+   single 1024-d vector. These are cached to `outputs/truthfulqa_features.pt`, so
+   re-training (different hyperparameters) skips extraction and finishes in seconds.
+4. **Train the probe** — the shared encoder + hallucination head + adversarial
+   domain head (with gradient reversal) are optimized with the compound loss:
+
+   $$\mathcal{L} = \mathcal{L}_{\text{BCE}} + \lambda\,\mathcal{L}_{\text{domain}} + \gamma\,\mathcal{L}_{\text{contrastive}}$$
+
+5. **Evaluate** — reports F1/precision/recall/AUC-ROC on train, in-domain
+   validation, and the held-out OOD categories.
+6. **Save** — writes weights to `checkpoints/probe.pt` and metrics to
+   `outputs/metrics.json`. The API server auto-loads this checkpoint on startup.
 
 ---
 
